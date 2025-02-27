@@ -1,7 +1,7 @@
 //=====[#include guards - begin]===============================================
 
-#ifndef _FIRE_ALARM_H_
-#define _FIRE_ALARM_H_
+#ifndef _MOTION_SENSOR_H_
+#define _MOTION_SENSOR_H_
 
 //=====[Declaration of public defines]=========================================
 
@@ -9,13 +9,11 @@
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void fireAlarmInit();
-void fireAlarmUpdate();
-bool gasDetectorStateRead();
-bool overTemperatureDetectorStateRead();
-bool gasDetectedRead();
-bool overTemperatureDetectedRead();
+void motionSensorInit();
+bool motionSensorRead();
+void motionSensorActivate();
+void motionSensorDeactivate();
 
 //=====[#include guards - end]=================================================
 
-#endif // _FIRE_ALARM_H_
+#endif // _MOTION_SENSOR_H_

@@ -1,16 +1,12 @@
 //=====[Libraries]=============================================================
 
+#include "mbed.h"
 #include "arm_book_lib.h"
 
-#include "smart_home_system.h"
-
-#include "siren.h"
-#include "user_interface.h"
-#include "fire_alarm.h"
-#include "pc_serial_com.h"
-#include "event_log.h"
-#include "motor.h"
-#include "gate.h"
+#include "dispenser.h"
+#include "motion_sensor.h"
+#include "continuous_servo.h"
+#include "positional_servo.h"
 
 //=====[Declaration of private defines]========================================
 
@@ -24,27 +20,39 @@
 
 //=====[Declaration and initialization of private global variables]============
 
+static bool dispenserDetected = OFF;
+static bool dispenserDetectedState = OFF;
+
 //=====[Declarations (prototypes) of private functions]========================
 
 //=====[Implementations of public functions]===================================
-
-void smartHomeSystemInit()
-{
-    userInterfaceInit();
-    fireAlarmInit();
-    pcSerialComInit();
-    motorControlInit();
-    gateInit();
+void dispenserInit() {
+    motionSensorInit();
+    continuousServoInit();
+    positionalServoInit();
 }
 
-void smartHomeSystemUpdate()
-{
-    userInterfaceUpdate();
-    fireAlarmUpdate();    
-    pcSerialComUpdate();
-    eventLogUpdate();
-    motorControlUpdate();
-    delay(SYSTEM_TIME_INCREMENT_MS);
+void dispenserUpdate() {
+    dispenserDetectedState = motionSensorRead();
+    continuousServoUpdate();
+
+    if ( dispenserDetectedState ) {
+        positionalServoUpdate();
+    }
 }
 
+bool dispenserStateRead() // from intruderDetectorStateRead
+{
+    return dispenserDetectedState;
+}
+
+bool dispenserRead() // from intruderDetectedRead
+{
+    return dispenserDetected;
+}
+
+void dispenserDeactivate() // from intruderAlarmDeactivate
+{
+    dispenserDetected = OFF;
+}
 //=====[Implementations of private functions]==================================
