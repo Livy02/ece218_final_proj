@@ -1,7 +1,7 @@
 //=====[#include guards - begin]===============================================
 
-#ifndef _SIREN_H_
-#define _SIREN_H_
+#ifndef _CONTINUOUS_SERVO_H_
+#define _CONTINUOUS_SERVO_H_
 
 //=====[Declaration of public defines]=========================================
 
@@ -9,11 +9,9 @@
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void sirenInit();
-bool sirenStateRead();
-void sirenStateWrite( bool state );
-void sirenUpdate( int strobeTime );
+void continuousServoInit();
+void continuousServoUpdate();
 
 //=====[#include guards - end]=================================================
 
-#endif // _SIREN_H_
+#endif // _CONTINUOUS_SERVO_H_

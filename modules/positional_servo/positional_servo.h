@@ -1,7 +1,6 @@
-//=====[#include guards - begin]===============================================
 
-#ifndef _STROBE_LIGHT_H_
-#define _STROBE_LIGHT_H_
+#ifndef _POSITIONAL_SERVO_H_
+#define _POSITIONAL_SERVO_H_
 
 //=====[Declaration of public defines]=========================================
 
@@ -9,11 +8,9 @@
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void strobeLightInit();
-bool strobeLightStateRead();
-void strobeLightStateWrite( bool state );
-void strobeLightUpdate( int strobeTime );
+void positionalServoInit();
+void positionalServoUpdate();
 
 //=====[#include guards - end]=================================================
 
-#endif // _STROBE_LIGHT_H_
+#endif // _POSITIONAL_SERVO_H_
