@@ -1,20 +1,23 @@
 //=====[#include guards - begin]===============================================
 
-#ifndef _DISPLAY_H_
-#define _DISPLAY_H_
+#ifndef _ITEM_SELECTION_H_
+#define _ITEM_SELECTION_H_
 
 //=====[Declaration of public defines]=========================================
+
+#define ITEM_CODE_LENGTH   2
+#define LEFT_CHOICE     '1'
+#define RIGHT_CHOICE    '2'
 
 //=====[Declaration of public data types]======================================
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void displayInit( void );
- 
-void displayCharPositionWrite( uint8_t charPositionX, uint8_t charPositionY );
-
-void displayStringWrite( const char * str );
-
+void itemSelectionInit();
+void itemSelectionUpdate( char* code, int codeLength );
+bool itemSelectionValid();
+char itemSelected();
+bool itemAvailable();
 //=====[#include guards - end]=================================================
 
-#endif // _DISPLAY_H_
+#endif // _ITEM_SELECTION_H_

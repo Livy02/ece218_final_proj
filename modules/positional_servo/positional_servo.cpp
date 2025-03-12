@@ -2,12 +2,13 @@
 #include "arm_book_lib.h"
 #include "positional_servo.h"
 
-#define DUTY_MIN 0.020
-#define DUTY_MAX 0.110
+#define DUTY_MIN 0.066
+#define DUTY_MAX 0.082
 #define PERIOD 0.02 
-#define TIME_INCREMENT_MS 2000
+#define TIME_INCREMENT_MS 5500
 
-PwmOut posServo(PF_9); 
+PwmOut posServo(PF_8); 
+
 
 void positionalServoInit()
 {

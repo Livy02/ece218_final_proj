@@ -1,13 +1,13 @@
 //=====[Libraries]=============================================================
 
-#include "smart_home_system.h"
+#include "vending_machine_system.h"
 
 //=====[Main function, the program entry point after power on or reset]========
 
 int main()
 {
-    smartHomeSystemInit();
+    vendingMachineInit();
     while (true) {
-        smartHomeSystemUpdate();
+        vendingMachineUpdate();
     }
 }
