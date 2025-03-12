@@ -1,13 +1,11 @@
 //=====[Libraries]=============================================================
 
-#include "mbed.h"
 #include "arm_book_lib.h"
 
-#include "dispenser.h"
-#include "motion_sensor.h"
-#include "continuous_servo.h"
-#include "positional_servo.h"
-#include "item_selection.h"
+#include "vending_machine_system.h"
+
+#include "user_interface.h"
+
 
 //=====[Declaration of private defines]========================================
 
@@ -21,45 +19,19 @@
 
 //=====[Declaration and initialization of private global variables]============
 
-static bool dispenserDetected = OFF;
-static bool dispenserDetectedState = OFF;
-
 //=====[Declarations (prototypes) of private functions]========================
 
 //=====[Implementations of public functions]===================================
-void dispenserInit() {
-    motionSensorInit();
-    continuousServoInit();
-    positionalServoInit();
-}
 
-void dispenserUpdate() {
-    
-    dispenserDetectedState = motionSensorRead();
-    if (itemSelected() == '1') {
-        continuousLeftServoUpdate();
-    } else if (itemSelected() == '2') {
-        continuousRightServoUpdate();
-    }
-
-    if ( dispenserDetectedState ) {
-        positionalServoUpdate();
-    }
-    
-}
-
-bool dispenserStateRead() 
+void vendingMachineInit()
 {
-    return dispenserDetectedState;
+    userInterfaceInit();
 }
 
-bool dispenserRead() 
+void vendingMachineUpdate()
 {
-    return dispenserDetected;
+    userInterfaceUpdate();
+    delay(SYSTEM_TIME_INCREMENT_MS);
 }
 
-void dispenserDeactivate() 
-{
-    dispenserDetected = OFF;
-}
 //=====[Implementations of private functions]==================================

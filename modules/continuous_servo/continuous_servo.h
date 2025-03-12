@@ -10,7 +10,8 @@
 //=====[Declarations (prototypes) of public functions]=========================
 
 void continuousServoInit();
-void continuousServoUpdate();
+void continuousLeftServoUpdate();
+void continuousRightServoUpdate();
 
 //=====[#include guards - end]=================================================
 

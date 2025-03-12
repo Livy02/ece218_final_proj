@@ -1,20 +1,25 @@
 //=====[#include guards - begin]===============================================
 
-#ifndef _DISPLAY_H_
-#define _DISPLAY_H_
+#ifndef _PAYMENT_H_
+#define _PAYMENT_H_
 
 //=====[Declaration of public defines]=========================================
+
+#define ID_CODE_LENGTH   4
+#define LEFT_PRICE       3.50
+#define RIGHT_PRICE      2.50
 
 //=====[Declaration of public data types]======================================
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void displayInit( void );
- 
-void displayCharPositionWrite( uint8_t charPositionX, uint8_t charPositionY );
+void paymentInit();
+void paymentUpdate(char* code, int codeLength );
+bool paymentValid();
+float priceOfItem();
+void paymentTransaction();
 
-void displayStringWrite( const char * str );
 
 //=====[#include guards - end]=================================================
 
-#endif // _DISPLAY_H_
+#endif // _PAYMENT_H_

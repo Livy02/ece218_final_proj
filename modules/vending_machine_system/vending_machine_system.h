@@ -1,20 +1,19 @@
 //=====[#include guards - begin]===============================================
 
-#ifndef _DISPLAY_H_
-#define _DISPLAY_H_
+#ifndef _VENDING_MACHINE_SYSTEM_H_
+#define _VENDING_MACHINE_SYSTEM_H_
 
 //=====[Declaration of public defines]=========================================
+
+#define SYSTEM_TIME_INCREMENT_MS   10
 
 //=====[Declaration of public data types]======================================
 
 //=====[Declarations (prototypes) of public functions]=========================
 
-void displayInit( void );
- 
-void displayCharPositionWrite( uint8_t charPositionX, uint8_t charPositionY );
-
-void displayStringWrite( const char * str );
+void vendingMachineInit();
+void vendingMachineUpdate();
 
 //=====[#include guards - end]=================================================
 
-#endif // _DISPLAY_H_
+#endif // _VENDING_MACHINE_SYSTEM_H_

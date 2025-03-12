@@ -5,92 +5,83 @@
 
 #include "user_interface.h"
 
-#include "code.h"
-#include "siren.h"
-#include "smart_home_system.h"
-#include "fire_alarm.h"
-#include "date_and_time.h"
-#include "temperature_sensor.h"
-#include "gas_sensor.h"
+
+#include "vending_machine_system.h"
+
 #include "matrix_keypad.h"
 #include "display.h"
-#include "GLCD_fire_alarm.h"
-#include "motor.h"
-#include "gate.h"
+#include "item_selection.h"
+#include "payment.h"
+#include "continuous_servo.h"
+#include "positional_servo.h"
 
 //=====[Declaration of private defines]========================================
 
-#define DISPLAY_REFRESH_TIME_REPORT_MS 1000
-#define DISPLAY_REFRESH_TIME_ALARM_MS 300
-
+#define DISPLAY_REFRESH_TIME_MS 1000
+#define CODE_NUMBER_OF_KEYS_ITEM 2
+#define CODE_NUMBER_OF_KEYS_PAY 4
+#define DISPLAY_DELAY_MS  1500
+#define DISPENSE_DELAY_MS 3000
 //=====[Declaration of private data types]=====================================
-
-typedef enum{
-    DISPLAY_ALARM_STATE,
-    DISPLAY_REPORT_STATE
-} displayState_t;
-
+char itemChosen[ITEM_LENGTH]; //change from 10!
+char studentID[ID_LENGTH]; //change from 10!
 //=====[Declaration and initialization of public global objects]===============
 
 DigitalOut incorrectCodeLed(LED3);
 DigitalOut systemBlockedLed(LED2);
 
-InterruptIn gateOpenButton(PF_9);
-InterruptIn gateCloseButton(PF_8);
-
 //=====[Declaration of external public global variables]=======================
 
 //=====[Declaration and initialization of public global variables]=============
 
-char codeSequenceFromUserInterface[CODE_NUMBER_OF_KEYS];
+char codeSequenceFromUserInterface[CODE_NUMBER_OF_KEYS_ITEM];
+transactionState_t transactionState;
 
 //=====[Declaration and initialization of private global variables]============
-
-static displayState_t displayState = DISPLAY_REPORT_STATE;
-static int displayAlarmGraphicSequence = 0;
-static int displayRefreshTimeMs = DISPLAY_REFRESH_TIME_REPORT_MS;
 
 static bool incorrectCodeState = OFF;
 static bool systemBlockedState = OFF;
 
-static bool codeComplete = false;
+static bool itemCodeComplete = false;
+static bool payCodeComplete = false;
 static int numberOfCodeChars = 0;
+static bool waitingForItemSelection = true;
+static bool waitingForPay = true;
+
 
 //=====[Declarations (prototypes) of private functions]========================
 
-static void userInterfaceMatrixKeypadUpdate();
+//static void userInterfaceMatrixKeypadUpdate();
 static void incorrectCodeIndicatorUpdate();
 static void systemBlockedIndicatorUpdate();
 
 static void userInterfaceDisplayInit();
 static void userInterfaceDisplayUpdate();
-static void userInterfaceDisplayReportStateInit();
-static void userInterfaceDisplayReportStateUpdate();
-static void userInterfaceDisplayAlarmStateInit();
-static void userInterfaceDisplayAlarmStateUpdate();
-
-static void gateOpenButtonCallback();
-static void gateCloseButtonCallback();
+static char* itemChosenDisplay();
+static char* paymentDisplay();
+static void resetSelection(char* code, int codeLength);
 
 //=====[Implementations of public functions]===================================
 
 void userInterfaceInit()
 {
-    gateOpenButton.mode(PullUp);
-    gateCloseButton.mode(PullUp);
-
-    gateOpenButton.fall(&gateOpenButtonCallback);
-    gateCloseButton.fall(&gateCloseButtonCallback);
-    
+    //continuousLeftServoUpdate();
     incorrectCodeLed = OFF;
     systemBlockedLed = OFF;
     matrixKeypadInit( SYSTEM_TIME_INCREMENT_MS );
     userInterfaceDisplayInit();
+    itemSelectionInit();
+    
 }
 
 void userInterfaceUpdate()
 {
-    userInterfaceMatrixKeypadUpdate();
+    if ( waitingForItemSelection ) {
+        userInterfaceItemMatrixKeypadUpdate();
+    } 
+    if (waitingForPay) {
+        userInterfacePaymentMatrixKeypadUpdate();
+    }
     incorrectCodeIndicatorUpdate();
     systemBlockedIndicatorUpdate();
     userInterfaceDisplayUpdate();
@@ -118,165 +109,426 @@ void systemBlockedStateWrite( bool state )
 
 bool userInterfaceCodeCompleteRead()
 {
-    return codeComplete;
+    return itemCodeComplete;
 }
 
 void userInterfaceCodeCompleteWrite( bool state )
 {
-    codeComplete = state;
+    itemCodeComplete = state;
 }
 
 //=====[Implementations of private functions]==================================
 
-static void userInterfaceMatrixKeypadUpdate()
+void userInterfaceItemMatrixKeypadUpdate() //change this to static
 {
+    static bool displayMessagePending = false;
+    static int messageDisplayTime = 0;
+    static bool displayValidMessage = false;
+    static int accumulatedTime = 0; 
+
     static int numberOfHashKeyReleased = 0;
     char keyReleased = matrixKeypadUpdate();
 
     if( keyReleased != '\0' ) {
+        transactionState = ITEM_STATE;
+        itemChosen[numberOfCodeChars] = keyReleased;
+        numberOfCodeChars++;
 
-        if( sirenStateRead() && !systemBlockedStateRead() ) {
-            if( !incorrectCodeStateRead() ) {
-                codeSequenceFromUserInterface[numberOfCodeChars] = keyReleased;
-                numberOfCodeChars++;
-                if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS ) {
-                    codeComplete = true;
-                    numberOfCodeChars = 0;
-                }
+        displayCharPositionWrite(12,0);
+        displayStringWrite(itemChosen);
+
+        if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS_ITEM ) {
+            itemSelectionUpdate(itemChosen, numberOfCodeChars);
+
+            if (itemSelectionValid() ) {
+                itemCodeComplete = true;
+                incorrectCodeState = OFF;
+
+                //displayCharPositionWrite(12,0); //
+                //displayStringWrite(itemChosenDisplay()); //
+
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Selected Valid");
+
+                displayMessagePending = true;
+                messageDisplayTime = DISPLAY_DELAY_MS;
+                //delay(1500);
+                transactionState = PAYMENT_STATE;
+                waitingForItemSelection = false;
+                numberOfCodeChars = 0;
+                waitingForPay = true; ///!!
+                //userInterfacePaymentMatrixKeypadUpdate();
             } else {
-                if( keyReleased == '#' ) {
-                    numberOfHashKeyReleased++;
-                    if( numberOfHashKeyReleased >= 2 ) {
-                        numberOfHashKeyReleased = 0;
-                        numberOfCodeChars = 0;
-                        codeComplete = false;
-                        incorrectCodeState = OFF;
-                    }
-                }
+                incorrectCodeState = ON;
+                itemCodeComplete = false;
+                numberOfCodeChars = 0;
+                waitingForItemSelection = true;
+
+                displayMessagePending = true;
+                displayValidMessage = false;
+                messageDisplayTime = DISPLAY_DELAY_MS;
+
+                displayCharPositionWrite(12,0); //
+                displayStringWrite(itemChosenDisplay()); //
+
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Selected Invalid");
+                //delay(1500);
+            }
+            }
+        }
+        if (displayMessagePending) {
+            accumulatedTime += TIME_INCREMENT_MS;
+
+            if (accumulatedTime >= messageDisplayTime) {
+                displayMessagePending = false;
+                accumulatedTime = 0;
+            }
+        }
+    /*
+    static int numberOfHashKeyReleased = 0;
+    char keyReleased = matrixKeypadUpdate();
+
+    if( keyReleased != '\0' ) {
+        transactionState = ITEM_STATE;
+        itemChosen[numberOfCodeChars] = keyReleased;
+        numberOfCodeChars++;
+
+        if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS_ITEM ) {
+            itemSelectionUpdate(itemChosen, numberOfCodeChars);
+            if (itemSelectionValid() ) {
+                itemCodeComplete = true;
+                incorrectCodeState = OFF;
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Selected Valid");
+                delay(1500);
+                transactionState = PAYMENT_STATE;
+                waitingForItemSelection = false;
+                numberOfCodeChars = 0;
+                waitingForPay = true; ///!!
+                //userInterfacePaymentMatrixKeypadUpdate();
+            } else {
+                incorrectCodeState = ON;
+                itemCodeComplete = false;
+                numberOfCodeChars = 0;
+                waitingForItemSelection = true;
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Selected Invalid");
+                delay(1500);
+            }
+            }
+        }
+        */
+    }
+
+static void resetSelection(char* code, int codeLength) {
+    for (int i = 0; i < codeLength; i++) {
+        code[i] = '\0';
+    }
+}
+
+void userInterfacePaymentMatrixKeypadUpdate() //change this to static
+{
+    static bool displayMessagePending = false;
+    static int messageDisplayTime = 0;
+    static bool displayValidMessage = false;
+    static int accumulatedTime = 0;
+
+    static int numberOfHashKeyReleased = 0;
+    char keyReleased = matrixKeypadUpdate();
+
+    if( keyReleased != '\0' ) {
+        transactionState = PAYMENT_STATE;
+        studentID[numberOfCodeChars] = keyReleased;
+        numberOfCodeChars++;
+
+        displayCharPositionWrite(12,0);
+        displayStringWrite(studentID);
+
+        //displayCharPositionWrite(12,0);
+        //displayStringWrite("         ");
+
+        if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS_PAY ) {
+            paymentUpdate(studentID, numberOfCodeChars);
+            if (paymentValid()) {
+                payCodeComplete = true;
+                incorrectCodeState = OFF;
+                //displayCharPositionWrite(0,1);
+                //displayStringWrite("ID Valid");
+                //paymentTransaction();
+
+                displayMessagePending = true;
+                displayValidMessage = true;
+                accumulatedTime = 0;
+                messageDisplayTime = DISPLAY_DELAY_MS; 
+
+                //delay(1500);
+
+                numberOfCodeChars = 0;
+                waitingForPay = false;
+                //transactionState = PAYMENT_STATE;
+            } else {
+                incorrectCodeState = ON;
+                payCodeComplete = false;
+                numberOfCodeChars = 0;
+                waitingForPay = true;
+
+                displayMessagePending = true;
+                displayValidMessage = false;
+                accumulatedTime = 0;
+                messageDisplayTime = DISPLAY_DELAY_MS;
+
+                displayCharPositionWrite(0,1);
+                displayStringWrite("ID Invalid");
+    
+                //delay(1500);
             }
         }
     }
-}
 
-static void userInterfaceDisplayReportStateInit()
-{
-    displayState = DISPLAY_REPORT_STATE;
-    displayRefreshTimeMs = DISPLAY_REFRESH_TIME_REPORT_MS;
-    
-    displayModeWrite( DISPLAY_MODE_CHAR );
+    if (displayMessagePending) {
+        accumulatedTime += TIME_INCREMENT_MS;
 
-    displayClear();
-
-    displayCharPositionWrite ( 0,0 );
-    displayStringWrite( "Temperature:" );
-
-    displayCharPositionWrite ( 0,1 );
-    displayStringWrite( "Gas:" );
-    
-    displayCharPositionWrite ( 0,2 );
-    displayStringWrite( "Alarm:" );
-}
-
-static void userInterfaceDisplayReportStateUpdate()
-{
-    char temperatureString[3] = "";
-    
-    sprintf(temperatureString, "%.0f", temperatureSensorReadCelsius());
-    displayCharPositionWrite ( 12,0 );
-    displayStringWrite( temperatureString );
-    displayCharPositionWrite ( 14,0 );
-    displayStringWrite( "'C" );
-
-    displayCharPositionWrite ( 4,1 );
-
-    if ( gasDetectorStateRead() ) {
-        displayStringWrite( "Detected    " );
-    } else {
-        displayStringWrite( "Not Detected" );
+        if (accumulatedTime >= messageDisplayTime) {
+            displayMessagePending = false;
+            accumulatedTime = 0;
+        }
     }
-    displayCharPositionWrite ( 6,2 );
-    displayStringWrite( "OFF" );
-}
 
-static void userInterfaceDisplayAlarmStateInit()
-{
-    displayState = DISPLAY_ALARM_STATE;
-    displayRefreshTimeMs = DISPLAY_REFRESH_TIME_ALARM_MS;
+    /*
+    static int numberOfHashKeyReleased = 0;
+    char keyReleased = matrixKeypadUpdate();
 
-    displayClear();
+    if( keyReleased != '\0' ) {
+        transactionState = PAYMENT_STATE;
+        studentID[numberOfCodeChars] = keyReleased;
+        numberOfCodeChars++;
 
-    displayModeWrite( DISPLAY_MODE_GRAPHIC );
-   
-    displayAlarmGraphicSequence = 0;
-}
+        //displayCharPositionWrite(12,0);
+        //displayStringWrite("         ");
 
-static void userInterfaceDisplayAlarmStateUpdate()
-{
-    switch( displayAlarmGraphicSequence ){
-        case 0:
-            displayBitmapWrite( GLCD_fire_alarm[0] );
-            displayAlarmGraphicSequence++;
-        break;
-        case 1:
-            displayBitmapWrite( GLCD_fire_alarm[1] );
-            displayAlarmGraphicSequence++;
-        break;
-        case 2:
-            displayBitmapWrite( GLCD_fire_alarm[2] );
-            displayAlarmGraphicSequence++;
-        break;
-        case 3:
-            displayBitmapWrite( GLCD_fire_alarm[3] );
-            displayAlarmGraphicSequence = 0;
-        break;
-        default:
-            displayBitmapWrite( GLCD_ClearScreen );
-            displayAlarmGraphicSequence = 1;
-        break;                   
+        if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS_PAY ) {
+            paymentUpdate(studentID, numberOfCodeChars);
+            if (paymentValid()) {
+                payCodeComplete = true;
+                incorrectCodeState = OFF;
+                displayCharPositionWrite(0,1);
+                displayStringWrite("ID Valid");
+
+                delay(1500);
+                numberOfCodeChars = 0;
+                waitingForPay = false;
+                //transactionState = PAYMENT_STATE;
+            } else {
+                incorrectCodeState = ON;
+                payCodeComplete = false;
+                numberOfCodeChars = 0;
+                waitingForPay = true;
+                displayCharPositionWrite(0,1);
+                displayStringWrite("ID Invalid");
+                delay(1500);
+            }
+        }
     }
+    */
+}
+
+static char* itemChosenDisplay() {
+    return itemChosen; 
+}
+
+static char* paymentDisplay() {
+    return studentID;
 }
 
 static void userInterfaceDisplayInit()
 {
-    displayInit( DISPLAY_TYPE_GLCD_ST7920, DISPLAY_CONNECTION_SPI );
-    userInterfaceDisplayReportStateInit();
+    //displayInit();
+    transactionState = WELCOME_STATE;
+
+
+    //transactionState = ITEM_STATE;
 }
 
 static void userInterfaceDisplayUpdate()
 {
+    static bool dispenseMessagePending = false;
+    static int dispenseMessageTime = 0;
+    static int accumulatedTime = 0;
+    //static bool displayValidMessage = false;
+
     static int accumulatedDisplayTime = 0;
+    //char itemString[10] = "";
     
     if( accumulatedDisplayTime >=
-        displayRefreshTimeMs ) {
+        DISPLAY_REFRESH_TIME_MS ) {
 
         accumulatedDisplayTime = 0;
 
-        switch ( displayState ) {
-            case DISPLAY_REPORT_STATE:
-                userInterfaceDisplayReportStateUpdate();
+        switch( transactionState ) {
 
-                if ( sirenStateRead() ) {
-                    userInterfaceDisplayAlarmStateInit();
+            case ITEM_STATE:
+                displayInit();
+                displayCharPositionWrite(0,0);
+                displayStringWrite("Item Chosen:");
+                displayCharPositionWrite(12,0);
+                displayStringWrite(itemChosenDisplay());
+                /*
+                if (itemCodeComplete) {
+                    if ( !itemSelectionValid() ) {
+                        waitingForItemSelection = true;
+                        displayCharPositionWrite(0,1);
+                        displayStringWrite("Selected Unknown");
+                    } else {
+                        transactionState = PAYMENT_STATE;
+                        waitingForItemSelection = false;
+                        displayCharPositionWrite(0,1);
+                        displayStringWrite("Enter Student ID:");
+                
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Enter Payment");
+                waitingForItemSelection = false;
+                */
+                
+                   // }
+               // }
+                break;
+            case PAYMENT_STATE:
+                displayInit();
+                displayCharPositionWrite(0,0);
+                displayStringWrite("Enter ID #:");
+                displayCharPositionWrite(12,0);
+                displayStringWrite(paymentDisplay());
+                
+                if (payCodeComplete) {
+                    if (!paymentValid()) {
+                        waitingForPay = true;
+                   
+                        displayCharPositionWrite(0,1);
+                        displayStringWrite("ID Unknown");
+                    } else {
+                        waitingForPay = false;
+                        displayCharPositionWrite(0,1);
+                        displayStringWrite("Thank you!");
+                        //paymentTransaction();
+
+                        dispenseMessagePending = true;
+                        dispenseMessageTime = DISPENSE_DELAY_MS;
+                        //delay(3000);
+                        transactionState = DISPENSE_STATE;
+                        
+               
+                    }
                 }
-            break;
+                break;
+            case DISPENSE_STATE:
+                if (dispenseMessagePending) {
+                    accumulatedTime += DISPENSE_DELAY_MS;
 
-            case DISPLAY_ALARM_STATE:
-                userInterfaceDisplayAlarmStateUpdate();
+                    if (accumulatedTime >= dispenseMessageTime) {
+                        dispenseMessagePending = false;
+                        accumulatedTime = 0;
 
-                if ( !sirenStateRead() ) {
-                    userInterfaceDisplayReportStateInit();
+                        displayInit();
+                        displayCharPositionWrite(0,0);
+                        displayStringWrite("Thank you!");
+
+                        //transactionState = WELCOME_STATE;
+                
+                        resetSelection(itemChosen, ITEM_LENGTH);
+                        resetSelection(studentID, ID_LENGTH);
+
+                        userInterfaceDisplayInit();
+                        userInterfaceUpdate();
+
+                        transactionState = WELCOME_STATE;
+                        
+                    }
                 }
-            break;
+                break;
+            case WELCOME_STATE:
+                //waitingForItemSelection = true;
+                //waitingForPay = true;
+                displayInit();
+                displayCharPositionWrite(0,0);
+                displayStringWrite("Welcome! Please");
+                displayCharPositionWrite(0,1);
+                displayStringWrite("Select a Snack");
+                break;
 
-            default:
-                userInterfaceDisplayReportStateInit();
-            break;
         }
+        
+    /*
+        bool ignitionReleased = false;
 
-   } else {
+    switch( ignitionButtonState ) {
+        case BUTTON_UP:
+            if( ignitionButton ) {
+                ignitionButtonState = BUTTON_FALLING;
+                accumulatedButtonTime = 0;
+            }
+            break;
+
+        case BUTTON_FALLING:
+            if( accumulatedButtonTime >= TIME_DEBOUNCE_MS ) {
+                if( ignitionButton ) {
+                    ignitionButtonState = BUTTON_DOWN;
+                    ignitionAttempted = true;
+                } else {
+                    ignitionButtonState = BUTTON_UP;
+                }
+            }
+            accumulatedButtonTime = accumulatedButtonTime + TIME_INCREMENT_MS;
+            break;
+        
+        case BUTTON_DOWN:
+            if (!ignitionButton){
+                ignitionButtonState = BUTTON_RISING;
+                accumulatedButtonTime = 0;
+            }
+            break;
+
+        case BUTTON_RISING:
+            if (!ignitionButton){
+                ignitionButtonState = BUTTON_UP;
+                ignitionReleased = true;
+            }
+            else{
+                ignitionButtonState = BUTTON_DOWN;
+            }
+            accumulatedButtonTime = accumulatedButtonTime + TIME_INCREMENT_MS;
+            break;
+    }
+    return ignitionReleased;
+    */
+
+        //sprintf(temperatureString, "%.0f", temperatureSensorReadCelsius());
+        //displayCharPositionWrite ( 4,0 ); //changed here 4 from 12
+        //displayStringWrite( temperatureString );
+        //displayCharPositionWrite ( 6,0 ); //changed here 6 from 14
+        //char tempWithDegree[] = { (char)223, 'C', '\0' };
+        //displayStringWrite(tempWithDegree);
+
+        //displayCharPositionWrite ( 13,0 ); //changed here from 4,1
+
+        //if ( gasDetectorStateRead() ) {
+        //    displayStringWrite( "D  " ); //changed here
+        //} else {
+        //    displayStringWrite( "ND" ); //changed here
+        //}
+
+        //displayCharPositionWrite ( 6,1 ); //changed here from 6,2
+        
+        //if ( sirenStateRead() ) {
+        //    displayStringWrite( "ON " );
+        //} else {
+        //    displayStringWrite( "OFF" );
+        //}
+
+    } else {
         accumulatedDisplayTime =
             accumulatedDisplayTime + SYSTEM_TIME_INCREMENT_MS;        
-    }
+    } 
 }
 
 static void incorrectCodeIndicatorUpdate()
@@ -287,14 +539,4 @@ static void incorrectCodeIndicatorUpdate()
 static void systemBlockedIndicatorUpdate()
 {
     systemBlockedLed = systemBlockedState;
-}
-
-static void gateOpenButtonCallback()
-{
-    gateOpen();
-}
-
-static void gateCloseButtonCallback()
-{
-    gateClose();
 }
