@@ -6,8 +6,6 @@
 //=====[Declaration of public defines]=========================================
 
 #define ID_CODE_LENGTH   4
-#define LEFT_PRICE       3.50
-#define RIGHT_PRICE      2.50
 
 //=====[Declaration of public data types]======================================
 
@@ -16,8 +14,6 @@
 void paymentInit();
 void paymentUpdate(char* code, int codeLength );
 bool paymentValid();
-float priceOfItem();
-void paymentTransaction();
 
 
 //=====[#include guards - end]=================================================

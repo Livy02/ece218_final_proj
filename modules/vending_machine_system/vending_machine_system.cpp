@@ -3,7 +3,6 @@
 #include "arm_book_lib.h"
 
 #include "vending_machine_system.h"
-
 #include "user_interface.h"
 
 
@@ -23,11 +22,13 @@
 
 //=====[Implementations of public functions]===================================
 
+//Initializes the vending machine system
 void vendingMachineInit()
 {
     userInterfaceInit();
 }
 
+//Updates the vending machine system
 void vendingMachineUpdate()
 {
     userInterfaceUpdate();

@@ -2,10 +2,8 @@
 
 #include "mbed.h"
 #include "arm_book_lib.h"
-
 #include "item_selection.h"
 #include "LED_lights.h" 
-//#include "payment.h"
 
 //=====[Declaration of private defines]========================================
 
@@ -20,9 +18,6 @@
 bool itemSuccessState = false;
 char itemSelectedCode = '\0';
 
-int itemLeftStock = 5;
-int itemRightStock = 5;
-
 //=====[Declarations (prototypes) of private functions]========================
 
 static void itemSelectionUnsuccessful();
@@ -31,13 +26,15 @@ static void itemUpdateStock();
 static bool itemLeftInStock();
 static bool itemRightInStock();
 
-
 //=====[Implementations of public functions]===================================
+
+//Initializes item selection
 void itemSelectionInit() {
     itemSuccessState = false;
     LEDLightsInit();
 }
 
+//Updates/evaluates item selection based on code entered and its length
 void itemSelectionUpdate( char* code, int codeLength ) {
     if ( codeLength >= ITEM_CODE_LENGTH ) {
         if (code[0] == 'A' && ((code[1] == '1') || (code[1] == '2'))) {
@@ -56,16 +53,17 @@ void itemSelectionUpdate( char* code, int codeLength ) {
             itemSuccessState = false;
         }
     } else {
-        turnRed();
         itemSelectionUnsuccessful();
         itemSuccessState = false;
     }
 }
 
+//Returns true if item selection successful, false otherwise
 bool itemSelectionValid() {
     return itemSuccessState;
 }
 
+//Returns the selected item code
 char itemSelected() {
     return itemSelectedCode; 
 }
@@ -73,6 +71,7 @@ char itemSelected() {
 
 //=====[Implementations of private functions]==================================
 
+//Handles unsuccessful item selection and corresponding LEDs
 static void itemSelectionUnsuccessful() {
     itemSuccessState = false;
     redLightStateWrite( true );
@@ -81,8 +80,7 @@ static void itemSelectionUnsuccessful() {
     greenLightUpdate();
 }
 
-
-
+//Handles successful item selection and corresponding LEDs
 static void itemSelectionSuccessful() {
     itemSuccessState = true;
     greenLightStateWrite( ON );
@@ -90,27 +88,3 @@ static void itemSelectionSuccessful() {
     redLightUpdate();
     greenLightUpdate();
 }
-
-static void itemUpdateStock() {
-    if ( itemSelectedCode == LEFT_CHOICE ) {
-        itemLeftStock = itemLeftStock - 1;
-    } else if ( itemSelectedCode == RIGHT_CHOICE ) {
-        itemRightStock = itemRightStock - 1;
-    }
-}
-
-static bool itemLeftInStock() {
-    return ( itemLeftStock >= 1 );
-}
-
-static bool itemRightInStock() {
-    return ( itemRightStock >= 1 );
-}
-
-//move this!!
-bool itemAvailable() {
-    return (itemSelectedCode == LEFT_CHOICE && itemLeftInStock()) || (itemSelectedCode == RIGHT_CHOICE && itemRightInStock());
-}
-
-//=====[Implementations of private functions]==================================
-

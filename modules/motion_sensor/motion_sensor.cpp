@@ -4,7 +4,6 @@
 #include "arm_book_lib.h"
 
 #include "motion_sensor.h"
-//#include "pc_serial_com.h"
 
 //=====[Declaration of private defines]========================================
 
@@ -30,6 +29,7 @@ static void motionCeased();
 
 //=====[Implementations of public functions]===================================
 
+//Initializes the motion sensor 
 void motionSensorInit()
 {
     pirOutputSignal.rise(&motionDetected);
@@ -37,31 +37,33 @@ void motionSensorInit()
     motionSensorActivated = true;
 }
 
+//True if motion detected, false otherwise
 bool motionSensorRead()
 {
     return pirState;
 }
 
+//Activates the motion sensor
 void motionSensorActivate()
 {
     motionSensorActivated = true;
     if ( !pirState ) {
         pirOutputSignal.rise(&motionDetected);
     }
-    //pcSerialComStringWrite("The motion sensor has been activated\r\n");
 }
 
+//Deactivates the motion sensor
 void motionSensorDeactivate()
 {
     motionSensorActivated = false;
     if ( !pirState ) {
         pirOutputSignal.rise(NULL);
     }
-    //pcSerialComStringWrite("The motion sensor has been deactivated\r\n");
 }
 
 //=====[Implementations of private functions]==================================
 
+//Called when motion is detected
 static void motionDetected()
 {
     pirState = ON;
@@ -69,6 +71,7 @@ static void motionDetected()
     pirOutputSignal.fall(&motionCeased);
 }
 
+//Called when motion stops
 static void motionCeased()
 {
     pirState = OFF;
