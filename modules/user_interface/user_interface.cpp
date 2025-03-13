@@ -84,7 +84,6 @@ static void userInterfaceItemMatrixKeypadUpdate()
     static bool displayValidMessage = false;
     static int accumulatedTime = 0; 
 
-    static int numberOfHashKeyReleased = 0;
     char keyReleased = matrixKeypadUpdate();
 
     if( keyReleased != '\0' ) {
@@ -155,7 +154,6 @@ static void userInterfacePaymentMatrixKeypadUpdate()
     static bool displayValidMessage = false;
     static int accumulatedTime = 0;
 
-    static int numberOfHashKeyReleased = 0;
     char keyReleased = matrixKeypadUpdate();
 
     if( keyReleased != '\0' ) {
