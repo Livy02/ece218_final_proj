@@ -1,3 +1,7 @@
+/*
+***NOTE*** TRIED TO DELETE THIS FILE AND THE MODULE MUTLIPLE TIMES BUT
+********** THEY WONT DELETE. IGNORE THE MOTOR MODULE FOLDER AND .CPP FILE
+*/
 //=====[Libraries]=============================================================
 
 #include "mbed.h"
