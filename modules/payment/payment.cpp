@@ -24,14 +24,16 @@ bool paymentSuccessState = false;
 
 static void paymentUnsuccessful();
 static void paymentSuccessful();
-static void paymentStateUpdate(bool state);
 
 //=====[Implementations of public functions]===================================
+
+//Initializes the dispenser and the payment subsystem
 void paymentInit() {
     paymentSuccessState = false;
     dispenserInit();
 }
 
+//Updates/evaluates payment based on code entered and its length
 void paymentUpdate(char* code, int codeLength ) {
     if ( codeLength == ID_CODE_LENGTH ) {
         for (int i = 0; i < codeLength; i++) {
@@ -46,32 +48,14 @@ void paymentUpdate(char* code, int codeLength ) {
     }  
 }
 
-void paymentTransaction() {
-    greenLightStateWrite( ON );
-    redLightStateWrite( OFF );
-    redLightUpdate();
-    greenLightUpdate();
-    dispenserUpdate();
-}
-
+//Returns true if payment successful, false otherwise
 bool paymentValid() {
     return paymentSuccessState;
 }
 
-float priceOfItem() {
-    if ( itemSelected() == LEFT_CHOICE ) {
-        return LEFT_PRICE;
-    } else {
-        return RIGHT_PRICE;
-    }
-}
-
-
 //=====[Implementations of private functions]==================================
-static void paymentStateUpdate(bool state) {
-    paymentSuccessState = state;
-}
  
+//Handles unsuccessful payment and corresponding LEDs
 static void paymentUnsuccessful() {
     paymentSuccessState = false;
     
@@ -79,21 +63,15 @@ static void paymentUnsuccessful() {
     greenLightStateWrite( OFF );
     redLightUpdate();
     greenLightUpdate();
-
-    
 }
 
+//Handles successful payment and corresponding LEDs
 static void paymentSuccessful() {
     paymentSuccessState = true;
-    paymentTransaction();
-    /*
     greenLightStateWrite( ON );
     redLightStateWrite( OFF );
     redLightUpdate();
     greenLightUpdate();
     dispenserUpdate();
-    */
-
 }
-//=====[Implementations of private functions]==================================
 

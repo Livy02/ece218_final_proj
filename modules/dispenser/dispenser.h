@@ -11,10 +11,6 @@
 
 void dispenserInit();
 void dispenserUpdate();
-bool dispenserStateRead();
-bool dispenserRead();
-void dispenserDeactivate();
-
 
 //=====[#include guards - end]=================================================
 

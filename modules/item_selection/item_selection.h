@@ -17,7 +17,7 @@ void itemSelectionInit();
 void itemSelectionUpdate( char* code, int codeLength );
 bool itemSelectionValid();
 char itemSelected();
-bool itemAvailable();
+
 //=====[#include guards - end]=================================================
 
 #endif // _ITEM_SELECTION_H_

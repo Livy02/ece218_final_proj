@@ -27,15 +27,18 @@ static bool dispenserDetectedState = OFF;
 //=====[Declarations (prototypes) of private functions]========================
 
 //=====[Implementations of public functions]===================================
+
+//Initializes the motion sensor, continuous servos, and positional servo for dispensing
 void dispenserInit() {
     motionSensorInit();
     continuousServoInit();
     positionalServoInit();
 }
 
+//Reads the current state of the motion senesor and updates the dispensor
 void dispenserUpdate() {
-    
     dispenserDetectedState = motionSensorRead();
+
     if (itemSelected() == '1') {
         continuousLeftServoUpdate();
     } else if (itemSelected() == '2') {
@@ -48,18 +51,4 @@ void dispenserUpdate() {
     
 }
 
-bool dispenserStateRead() 
-{
-    return dispenserDetectedState;
-}
-
-bool dispenserRead() 
-{
-    return dispenserDetected;
-}
-
-void dispenserDeactivate() 
-{
-    dispenserDetected = OFF;
-}
 //=====[Implementations of private functions]==================================

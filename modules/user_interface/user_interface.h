@@ -19,8 +19,6 @@ typedef enum {
 void userInterfaceInit();
 void userInterfaceUpdate();
 bool userInterfaceCodeCompleteRead();
-void userInterfaceItemMatrixKeypadUpdate();
-void userInterfacePaymentMatrixKeypadUpdate();
 void userInterfaceCodeCompleteWrite( bool state );
 
 bool incorrectCodeStateRead();

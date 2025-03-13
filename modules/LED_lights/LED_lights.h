@@ -16,15 +16,10 @@ typedef enum {
 
 void LEDLightsInit();
 void overHeadLightInit();
-bool overHeadLightStateRead();
-bool redLightStateRead();
-bool greenLightStateRead();
-void overHeadLightStateWrite( bool state );
 void redLightStateWrite( bool state );
 void greenLightStateWrite( bool state );
 void redLightUpdate();
 void greenLightUpdate();
-void turnRed();
 
 //=====[#include guards - end]=================================================
 
